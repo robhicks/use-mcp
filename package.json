@@ -1,0 +1,61 @@
+{
+  "name": "use-mcp",
+  "repository": "https://github.com/modelcontextprotocol/use-mcp",
+  "version": "0.0.8",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "require": "./dist/react/index.js",
+      "import": "./dist/react/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "check": "prettier --check . && tsc",
+    "fix:oranda": "sed -i 's/```tsx/```ts/g' README.md",
+    "build:site": "npx @axodotdev/oranda build",
+    "deploy:site": "npx wrangler deploy"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0"
+  },
+  "devDependencies": {
+    "@axodotdev/oranda": "^0.6.5",
+    "@types/react": "^19.0.12",
+    "prettier": "^3.5.3",
+    "react": "^19.0.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.20.2"
+  },
+  "tsup": {
+    "entry": [
+      "src/index.ts",
+      "src/react/index.ts"
+    ],
+    "format": [
+      "esm"
+    ],
+    "dts": true,
+    "clean": true,
+    "outDir": "dist",
+    "external": [
+      "react",
+      "@modelcontextprotocol/sdk"
+    ]
+  },
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+}
