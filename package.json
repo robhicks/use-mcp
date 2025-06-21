@@ -1,12 +1,15 @@
 {
   "name": "use-mcp",
-  "repository": "https://github.com/modelcontextprotocol/use-mcp",
+  "repository": "https://github.com/robhicks/use-mcp",
   "version": "0.1.0",
   "type": "module",
+  "main": "./dist/index.js",
   "files": [
     "dist",
+    "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "tsconfig.json"
   ],
   "exports": {
     ".": {
@@ -21,6 +24,7 @@
     }
   },
   "scripts": {
+    "prepare": "npm run build",
     "dev": "tsup --watch",
     "build": "tsup",
     "check": "prettier --check . && tsc",
