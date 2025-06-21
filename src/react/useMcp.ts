@@ -1,5 +1,16 @@
 // useMcp.ts
-import { CallToolResultSchema, JSONRPCMessage, ListToolsResultSchema, Tool } from '@modelcontextprotocol/sdk/types.js'
+import {
+  CallToolResultSchema,
+  JSONRPCMessage,
+  ListToolsResultSchema,
+  Tool,
+  ListResourcesResultSchema,
+  ListPromptsResultSchema,
+  ReadResourceResultSchema,
+  GetPromptResultSchema,
+  Resource,
+  Prompt,
+} from '@modelcontextprotocol/sdk/types.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 // Import both transport types
 import { SSEClientTransport, SSEClientTransportOptions } from '@modelcontextprotocol/sdk/client/sse.js'
@@ -34,6 +45,8 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
 
   const [state, setState] = useState<UseMcpResult['state']>('discovering')
   const [tools, setTools] = useState<Tool[]>([])
+  const [resources, setResources] = useState<Resource[]>([])
+  const [prompts, setPrompts] = useState<Prompt[]>([])
   const [error, setError] = useState<string | undefined>(undefined)
   const [log, setLog] = useState<UseMcpResult['log']>([])
   const [authUrl, setAuthUrl] = useState<string | undefined>(undefined)
@@ -90,6 +103,8 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
       if (isMountedRef.current && !quiet) {
         setState('discovering')
         setTools([])
+        setResources([])
+        setPrompts([])
         setError(undefined)
         setAuthUrl(undefined)
       }
@@ -250,16 +265,47 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
         await clientRef.current!.connect(transportInstance)
 
         // --- Success Path ---
-        addLog('info', `Client connected via ${transportType.toUpperCase()}. Loading tools...`)
+        addLog('info', `Client connected via ${transportType.toUpperCase()}. Loading tools, resources, and prompts...`)
         successfulTransportRef.current = transportType // Store successful type
         setState('loading')
 
-        const toolsResponse = await clientRef.current!.request({ method: 'tools/list' }, ListToolsResultSchema)
+        // Load tools, resources, and prompts in parallel
+        const [toolsResponse, resourcesResponse, promptsResponse] = await Promise.allSettled([
+          clientRef.current!.request({ method: 'tools/list' }, ListToolsResultSchema),
+          clientRef.current!.request({ method: 'resources/list' }, ListResourcesResultSchema),
+          clientRef.current!.request({ method: 'prompts/list' }, ListPromptsResultSchema),
+        ])
 
         if (isMountedRef.current) {
           // Check mount before final state updates
-          setTools(toolsResponse.tools)
-          addLog('info', `Loaded ${toolsResponse.tools.length} tools.`)
+
+          // Handle tools response
+          if (toolsResponse.status === 'fulfilled') {
+            setTools(toolsResponse.value.tools)
+            addLog('info', `Loaded ${toolsResponse.value.tools.length} tools.`)
+          } else {
+            addLog('warn', `Failed to load tools: ${toolsResponse.reason}`)
+            setTools([])
+          }
+
+          // Handle resources response
+          if (resourcesResponse.status === 'fulfilled') {
+            setResources(resourcesResponse.value.resources)
+            addLog('info', `Loaded ${resourcesResponse.value.resources.length} resources.`)
+          } else {
+            addLog('warn', `Failed to load resources: ${resourcesResponse.reason}`)
+            setResources([])
+          }
+
+          // Handle prompts response
+          if (promptsResponse.status === 'fulfilled') {
+            setPrompts(promptsResponse.value.prompts)
+            addLog('info', `Loaded ${promptsResponse.value.prompts.length} prompts.`)
+          } else {
+            addLog('warn', `Failed to load prompts: ${promptsResponse.reason}`)
+            setPrompts([])
+          }
+
           setState('ready') // Final success state
           // connectingRef will be set to false after orchestration logic
           connectAttemptRef.current = 0 // Reset on success
@@ -465,6 +511,88 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
     [state, url, addLog, failConnection, connect], // Depends on state for error message, url, and stable callbacks
   )
 
+  // listResources is stable (depends on stable addLog, failConnection, connect, and URL)
+  const listResources = useCallback(
+    async (cursor?: string) => {
+      if (stateRef.current !== 'ready' || !clientRef.current) {
+        throw new Error(`MCP client is not ready (current state: ${state}). Cannot list resources.`)
+      }
+      addLog('info', `Listing resources${cursor ? ` with cursor: ${cursor}` : ''}`)
+      try {
+        const result = await clientRef.current.request(
+          { method: 'resources/list', params: cursor ? { cursor } : {} },
+          ListResourcesResultSchema,
+        )
+        addLog('info', `Listed ${result.resources.length} resources.`)
+        return result
+      } catch (err) {
+        addLog('error', `Error listing resources: ${err instanceof Error ? err.message : String(err)}`, err)
+        throw err
+      }
+    },
+    [state, addLog, failConnection, connect],
+  )
+
+  // readResource is stable (depends on stable addLog, failConnection, connect, and URL)
+  const readResource = useCallback(
+    async (uri: string) => {
+      if (stateRef.current !== 'ready' || !clientRef.current) {
+        throw new Error(`MCP client is not ready (current state: ${state}). Cannot read resource "${uri}".`)
+      }
+      addLog('info', `Reading resource: ${uri}`)
+      try {
+        const result = await clientRef.current.request({ method: 'resources/read', params: { uri } }, ReadResourceResultSchema)
+        addLog('info', `Resource "${uri}" read successfully.`)
+        return result
+      } catch (err) {
+        addLog('error', `Error reading resource "${uri}": ${err instanceof Error ? err.message : String(err)}`, err)
+        throw err
+      }
+    },
+    [state, addLog, failConnection, connect],
+  )
+
+  // listPrompts is stable (depends on stable addLog, failConnection, connect, and URL)
+  const listPrompts = useCallback(
+    async (cursor?: string) => {
+      if (stateRef.current !== 'ready' || !clientRef.current) {
+        throw new Error(`MCP client is not ready (current state: ${state}). Cannot list prompts.`)
+      }
+      addLog('info', `Listing prompts${cursor ? ` with cursor: ${cursor}` : ''}`)
+      try {
+        const result = await clientRef.current.request(
+          { method: 'prompts/list', params: cursor ? { cursor } : {} },
+          ListPromptsResultSchema,
+        )
+        addLog('info', `Listed ${result.prompts.length} prompts.`)
+        return result
+      } catch (err) {
+        addLog('error', `Error listing prompts: ${err instanceof Error ? err.message : String(err)}`, err)
+        throw err
+      }
+    },
+    [state, addLog, failConnection, connect],
+  )
+
+  // getPrompt is stable (depends on stable addLog, failConnection, connect, and URL)
+  const getPrompt = useCallback(
+    async (name: string) => {
+      if (stateRef.current !== 'ready' || !clientRef.current) {
+        throw new Error(`MCP client is not ready (current state: ${state}). Cannot get prompt "${name}".`)
+      }
+      addLog('info', `Getting prompt: ${name}`)
+      try {
+        const result = await clientRef.current.request({ method: 'prompts/get', params: { name } }, GetPromptResultSchema)
+        addLog('info', `Prompt "${name}" retrieved successfully.`)
+        return result
+      } catch (err) {
+        addLog('error', `Error getting prompt "${name}": ${err instanceof Error ? err.message : String(err)}`, err)
+        throw err
+      }
+    },
+    [state, addLog, failConnection, connect],
+  )
+
   // retry is stable (depends on stable addLog, connect)
   const retry = useCallback(() => {
     // Use stateRef for check
@@ -606,6 +734,8 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
   return {
     state,
     tools,
+    resources,
+    prompts,
     error,
     log,
     authUrl,
@@ -614,5 +744,9 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
     disconnect,
     authenticate,
     clearStorage,
+    listResources,
+    readResource,
+    listPrompts,
+    getPrompt,
   }
 }

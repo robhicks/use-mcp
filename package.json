@@ -29,17 +29,17 @@
     "deploy:site": "npx wrangler deploy"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.11.0"
+    "@modelcontextprotocol/sdk": "1.13.0"
   },
   "devDependencies": {
-    "@axodotdev/oranda": "^0.6.5",
-    "@types/react": "^19.0.12",
-    "prettier": "^3.5.3",
-    "react": "^19.0.0",
-    "tsup": "^8.4.0",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "wrangler": "^4.20.2"
+    "@axodotdev/oranda": "0.6.5",
+    "@types/react": "19.1.8",
+    "prettier": "3.5.3",
+    "react": "19.1.0",
+    "tsup": "8.5.0",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3",
+    "wrangler": "4.20.5"
   },
   "tsup": {
     "entry": [

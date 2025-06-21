@@ -1,4 +1,4 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js'
+import { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js'
 
 export type UseMcpOptions = {
   /** The /sse URL of your remote MCP server */
@@ -31,6 +31,10 @@ export type UseMcpOptions = {
 export type UseMcpResult = {
   /** List of tools available from the connected MCP server */
   tools: Tool[]
+  /** List of resources available from the connected MCP server */
+  resources: Resource[]
+  /** List of prompts available from the connected MCP server */
+  prompts: Prompt[]
   /**
    * The current state of the MCP connection:
    * - 'discovering': Checking server existence and capabilities (including auth requirements).
@@ -58,6 +62,34 @@ export type UseMcpResult = {
    * @throws If the client is not in the 'ready' state or the call fails.
    */
   callTool: (name: string, args?: Record<string, unknown>) => Promise<any>
+  /**
+   * Function to list resources from the MCP server.
+   * @param cursor Optional cursor for pagination.
+   * @returns A promise that resolves with the list of resources.
+   * @throws If the client is not in the 'ready' state or the call fails.
+   */
+  listResources: (cursor?: string) => Promise<any>
+  /**
+   * Function to read a specific resource from the MCP server.
+   * @param uri The URI of the resource to read.
+   * @returns A promise that resolves with the resource contents.
+   * @throws If the client is not in the 'ready' state or the call fails.
+   */
+  readResource: (uri: string) => Promise<any>
+  /**
+   * Function to list prompts from the MCP server.
+   * @param cursor Optional cursor for pagination.
+   * @returns A promise that resolves with the list of prompts.
+   * @throws If the client is not in the 'ready' state or the call fails.
+   */
+  listPrompts: (cursor?: string) => Promise<any>
+  /**
+   * Function to get a specific prompt from the MCP server.
+   * @param name The name of the prompt to get.
+   * @returns A promise that resolves with the prompt.
+   * @throws If the client is not in the 'ready' state or the call fails.
+   */
+  getPrompt: (name: string) => Promise<any>
   /** Manually attempts to reconnect if the state is 'failed'. */
   retry: () => void
   /** Disconnects the client from the MCP server. */

@@ -23,7 +23,7 @@ The useMcp hook manages the connection to an MCP server, handles authentication 
 ```tsx
 import { useMcp } from 'use-mcp'
 // Optional: Import types if needed
-import type { UseMcpOptions, UseMcpResult, Tool } from 'use-mcp'
+import type { UseMcpOptions, UseMcpResult, Tool, Resource, Prompt } from 'use-mcp'
 ```
 
 ## Usage
@@ -79,6 +79,43 @@ function MyChatComponent() {
     },
   })
 
+  // Example: Using MCP resources and prompts
+  const handleResourceExample = async () => {
+    if (mcp.state === 'ready') {
+      try {
+        // List available resources
+        const resourcesList = await mcp.listResources()
+        console.log('Available resources:', resourcesList.resources)
+        
+        // Read a specific resource
+        if (resourcesList.resources.length > 0) {
+          const resource = await mcp.readResource(resourcesList.resources[0].uri)
+          console.log('Resource contents:', resource)
+        }
+      } catch (error) {
+        console.error('Error accessing resources:', error)
+      }
+    }
+  }
+
+  const handlePromptExample = async () => {
+    if (mcp.state === 'ready') {
+      try {
+        // List available prompts
+        const promptsList = await mcp.listPrompts()
+        console.log('Available prompts:', promptsList.prompts)
+        
+        // Get a specific prompt
+        if (promptsList.prompts.length > 0) {
+          const prompt = await mcp.getPrompt(promptsList.prompts[0].name)
+          console.log('Prompt details:', prompt)
+        }
+      } catch (error) {
+        console.error('Error accessing prompts:', error)
+      }
+    }
+  }
+
   return (
     <div>
       <h1>MCP Status: {mcp.state}</h1>
@@ -101,7 +138,11 @@ function MyChatComponent() {
         </div>
       )}
       {mcp.state === 'authenticating' && <p>Waiting for authentication...</p>}
-      {mcp.state === 'ready' && <p>Connected! Tools available: {mcp.tools.length}</p>}
+      {mcp.state === 'ready' && (
+        <p>
+          Connected! Tools: {mcp.tools.length}, Resources: {mcp.resources.length}, Prompts: {mcp.prompts.length}
+        </p>
+      )}
 
       {/* Your Chat UI */}
       <div>

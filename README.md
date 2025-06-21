@@ -38,8 +38,14 @@ function MyAIComponent() {
   const {
     state,          // Connection state: 'discovering' | 'authenticating' | 'connecting' | 'loading' | 'ready' | 'failed'
     tools,          // Available tools from MCP server
+    resources,      // Available resources from MCP server
+    prompts,        // Available prompts from MCP server
     error,          // Error message if connection failed
     callTool,       // Function to call tools on the MCP server
+    listResources,  // Function to list resources from MCP server
+    readResource,   // Function to read a specific resource from MCP server
+    listPrompts,    // Function to list prompts from MCP server
+    getPrompt,      // Function to get a specific prompt from MCP server
     retry,          // Retry connection manually
     authenticate,   // Manually trigger authentication
     clearStorage,   // Clear stored tokens and credentials
@@ -174,10 +180,16 @@ function useMcp(options: UseMcpOptions): UseMcpResult
 |----------|------|-------------|
 | `state` | `string` | Current connection state: 'discovering', 'authenticating', 'connecting', 'loading', 'ready', 'failed' |
 | `tools` | `Tool[]` | Available tools from the MCP server |
+| `resources` | `Resource[]` | Available resources from the MCP server |
+| `prompts` | `Prompt[]` | Available prompts from the MCP server |
 | `error` | `string \| undefined` | Error message if connection failed |
 | `authUrl` | `string \| undefined` | Manual authentication URL if popup is blocked |
 | `log` | `{ level: 'debug' \| 'info' \| 'warn' \| 'error'; message: string; timestamp: number }[]` | Array of log messages |
 | `callTool` | `(name: string, args?: Record<string, unknown>) => Promise<any>` | Function to call a tool on the MCP server |
+| `listResources` | `(cursor?: string) => Promise<any>` | Function to list resources from the MCP server |
+| `readResource` | `(uri: string) => Promise<any>` | Function to read a specific resource from the MCP server |
+| `listPrompts` | `(cursor?: string) => Promise<any>` | Function to list prompts from the MCP server |
+| `getPrompt` | `(name: string) => Promise<any>` | Function to get a specific prompt from the MCP server |
 | `retry` | `() => void` | Manually attempt to reconnect |
 | `disconnect` | `() => void` | Disconnect from the MCP server |
 | `authenticate` | `() => void` | Manually trigger authentication |
