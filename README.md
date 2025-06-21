@@ -28,6 +28,8 @@ yarn add use-mcp
 - 🧰 TypeScript types for editor assistance and type checking
 - 📝 Comprehensive logging for debugging
 - 🌐 Works with both HTTP and SSE (Server-Sent Events) transports
+- 📚 Full access to MCP resources and prompts
+- 🛠️ Tool calling with automatic retry and error handling
 
 ## Quick Start
 
@@ -80,6 +82,36 @@ function MyAIComponent() {
     }
   }
 
+  // Use available resources
+  const handleResourceExample = async () => {
+    try {
+      const resourcesList = await listResources()
+      console.log('Available resources:', resourcesList.resources)
+      
+      if (resourcesList.resources.length > 0) {
+        const resource = await readResource(resourcesList.resources[0].uri)
+        console.log('Resource contents:', resource)
+      }
+    } catch (err) {
+      console.error('Resource access failed:', err)
+    }
+  }
+
+  // Use available prompts
+  const handlePromptExample = async () => {
+    try {
+      const promptsList = await listPrompts()
+      console.log('Available prompts:', promptsList.prompts)
+      
+      if (promptsList.prompts.length > 0) {
+        const prompt = await getPrompt(promptsList.prompts[0].name)
+        console.log('Prompt details:', prompt)
+      }
+    } catch (err) {
+      console.error('Prompt access failed:', err)
+    }
+  }
+
   return (
     <div>
       <h2>Available Tools: {tools.length}</h2>
@@ -88,7 +120,24 @@ function MyAIComponent() {
           <li key={tool.name}>{tool.name}</li>
         ))}
       </ul>
+      
+      <h2>Available Resources: {resources.length}</h2>
+      <ul>
+        {resources.map(resource => (
+          <li key={resource.uri}>{resource.uri}</li>
+        ))}
+      </ul>
+      
+      <h2>Available Prompts: {prompts.length}</h2>
+      <ul>
+        {prompts.map(prompt => (
+          <li key={prompt.name}>{prompt.name}</li>
+        ))}
+      </ul>
+      
       <button onClick={handleSearch}>Search</button>
+      <button onClick={handleResourceExample}>Access Resources</button>
+      <button onClick={handlePromptExample}>Access Prompts</button>
     </div>
   )
 }
@@ -170,9 +219,11 @@ function useMcp(options: UseMcpOptions): UseMcpResult
 | `callbackUrl` | `string` | Custom callback URL for OAuth redirect (defaults to `/oauth/callback` on the current origin) |
 | `storageKeyPrefix` | `string` | Storage key prefix for OAuth data in localStorage (defaults to "mcp:auth") |
 | `clientConfig` | `object` | Custom configuration for the MCP client identity |
+| `customHeaders` | `Record<string, string>` | Custom headers that can be used to bypass auth |
 | `debug` | `boolean` | Whether to enable verbose debug logging |
 | `autoRetry` | `boolean \| number` | Auto retry connection if initial connection fails, with delay in ms |
 | `autoReconnect` | `boolean \| number` | Auto reconnect if an established connection is lost, with delay in ms (default: 3000) |
+| `popupFeatures` | `string` | Popup window features string (dimensions and behavior) for OAuth |
 
 #### Return Value
 

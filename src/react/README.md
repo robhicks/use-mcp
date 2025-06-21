@@ -14,16 +14,16 @@ yarn add use-mcp @modelcontextprotocol/sdk react react-dom
 pnpm add use-mcp @modelcontextprotocol/sdk react react-dom
 ```
 
-useMcp Hook
+## useMcp Hook
 
-The useMcp hook manages the connection to an MCP server, handles authentication (including OAuth), and provides the list of available tools and functions to interact with the server.
+The useMcp hook manages the connection to an MCP server, handles authentication (including OAuth), and provides access to tools, resources, and prompts with functions to interact with the server.
 
 ## Importing
 
 ```tsx
-import { useMcp } from 'use-mcp'
+import { useMcp } from 'use-mcp/react'
 // Optional: Import types if needed
-import type { UseMcpOptions, UseMcpResult, Tool, Resource, Prompt } from 'use-mcp'
+import type { UseMcpOptions, UseMcpResult, Tool, Resource, Prompt } from 'use-mcp/react'
 ```
 
 ## Usage
@@ -79,7 +79,7 @@ function MyChatComponent() {
     },
   })
 
-  // Example: Using MCP resources and prompts
+  // Example: Using MCP resources
   const handleResourceExample = async () => {
     if (mcp.state === 'ready') {
       try {
@@ -98,6 +98,7 @@ function MyChatComponent() {
     }
   }
 
+  // Example: Using MCP prompts
   const handlePromptExample = async () => {
     if (mcp.state === 'ready') {
       try {
@@ -139,9 +140,18 @@ function MyChatComponent() {
       )}
       {mcp.state === 'authenticating' && <p>Waiting for authentication...</p>}
       {mcp.state === 'ready' && (
-        <p>
-          Connected! Tools: {mcp.tools.length}, Resources: {mcp.resources.length}, Prompts: {mcp.prompts.length}
-        </p>
+        <div>
+          <p>Connected! Available:</p>
+          <ul>
+            <li>Tools: {mcp.tools.length}</li>
+            <li>Resources: {mcp.resources.length}</li>
+            <li>Prompts: {mcp.prompts.length}</li>
+          </ul>
+          
+          {/* Example buttons for testing resources and prompts */}
+          <button onClick={handleResourceExample}>Test Resources</button>
+          <button onClick={handlePromptExample}>Test Prompts</button>
+        </div>
       )}
 
       {/* Your Chat UI */}
@@ -188,32 +198,60 @@ function MyChatComponent() {
 export default MyChatComponent
 ```
 
-### Hook Options (UseMcpOptions)
+## Hook Options (UseMcpOptions)
 
-- url (required): The /sse URL of your MCP server.
-- clientName: Name used for OAuth dynamic client registration (if applicable). Defaults to "MCP React Client".
-- clientUri: Client URI used for OAuth registration. Defaults to window.location.origin.
-- callbackUrl: The absolute URL of your OAuth callback page. Must match the redirect URI registered with your OAuth server and the route where you call onMcpAuthorization. Defaults to /oauth/callback on the current origin.
-- storageKeyPrefix: Prefix for keys used in localStorage (e.g., tokens, client info). Defaults to "mcp:auth". Useful to avoid conflicts if multiple MCP instances/apps run on the same origin.
-- clientConfig: Information about the client application sent during the MCP handshake. Includes name (default: "mcp-react-client") and version (default: "0.1.0").
-- debug: Enable verbose logging to the console and the log state array. Defaults to false.
-- autoRetry: If true or a number (milliseconds), automatically tries to reconnect if the initial connection fails. Defaults to false. Uses a 5000ms delay if set to true.
-- autoReconnect: If true or a number (milliseconds), automatically tries to reconnect if an established connection is lost. Defaults to 3000 (3 seconds). Set to false to disable.
-- popupFeatures: The features string passed to window.open for the OAuth popup. Defaults to "width=600,height=700,resizable=yes,scrollbars=yes,status=yes".
+| Option | Type | Description |
+|--------|------|-------------|
+| `url` | `string` | **Required**. The /sse URL of your MCP server |
+| `clientName` | `string` | Name used for OAuth dynamic client registration (if applicable). Defaults to "MCP React Client" |
+| `clientUri` | `string` | Client URI used for OAuth registration. Defaults to window.location.origin |
+| `callbackUrl` | `string` | The absolute URL of your OAuth callback page. Must match the redirect URI registered with your OAuth server and the route where you call onMcpAuthorization. Defaults to /oauth/callback on the current origin |
+| `storageKeyPrefix` | `string` | Prefix for keys used in localStorage (e.g., tokens, client info). Defaults to "mcp:auth". Useful to avoid conflicts if multiple MCP instances/apps run on the same origin |
+| `clientConfig` | `object` | Information about the client application sent during the MCP handshake. Includes name (default: "mcp-react-client") and version (default: "0.1.0") |
+| `customHeaders` | `Record<string, string>` | Custom headers that can be used to bypass auth |
+| `debug` | `boolean` | Enable verbose logging to the console and the log state array. Defaults to false |
+| `autoRetry` | `boolean \| number` | If true or a number (milliseconds), automatically tries to reconnect if the initial connection fails. Defaults to false. Uses a 5000ms delay if set to true |
+| `autoReconnect` | `boolean \| number` | If true or a number (milliseconds), automatically tries to reconnect if an established connection is lost. Defaults to 3000ms |
+| `popupFeatures` | `string` | Popup window features string (dimensions and behavior) for OAuth |
 
-### Hook Return Value (UseMcpResult)
+## Hook Return Value (UseMcpResult)
 
-- tools: An array of Tool objects provided by the server. Empty until state is 'ready'.
-- state: The current connection state ('discovering', 'authenticating', 'connecting', 'loading', 'ready', 'failed'). Use this to conditionally render UI or enable/disable features.
-- error: An error message if state is 'failed'.
-- authUrl: If authentication is required and the popup was potentially blocked, this URL string can be used to let the user manually open the auth page (e.g., <a href={authUrl} target="_blank">...</a>).
-- log: An array of log messages { level, message, timestamp }. Useful for debugging when debug option is true.
-- callTool(name, args): An async function to execute a tool on the MCP server. Throws an error if the client isn't ready or the call fails.
-- retry(): Manually triggers a reconnection attempt if the state is 'failed'.
-- disconnect(): Disconnects the client from the server.
-- authenticate(): Manually attempts to start the authentication flow. Useful for triggering the popup via a user click if it was initially blocked.
-- clearStorage(): Removes all authentication-related data (tokens, client info, code verifier, state) for the configured server URL from localStorage. Useful for development or allowing users to "log out". Automatically disconnects the client.
+| Property | Type | Description |
+|----------|------|-------------|
+| `state` | `string` | Current connection state: 'discovering', 'authenticating', 'connecting', 'loading', 'ready', 'failed' |
+| `tools` | `Tool[]` | Available tools from the MCP server |
+| `resources` | `Resource[]` | Available resources from the MCP server |
+| `prompts` | `Prompt[]` | Available prompts from the MCP server |
+| `error` | `string \| undefined` | Error message if connection failed |
+| `authUrl` | `string \| undefined` | Manual authentication URL if popup is blocked |
+| `log` | `{ level: 'debug' \| 'info' \| 'warn' \| 'error'; message: string; timestamp: number }[]` | Array of log messages |
+| `callTool` | `(name: string, args?: Record<string, unknown>) => Promise<any>` | Function to call a tool on the MCP server |
+| `listResources` | `(cursor?: string) => Promise<any>` | Function to list resources from the MCP server |
+| `readResource` | `(uri: string) => Promise<any>` | Function to read a specific resource from the MCP server |
+| `listPrompts` | `(cursor?: string) => Promise<any>` | Function to list prompts from the MCP server |
+| `getPrompt` | `(name: string) => Promise<any>` | Function to get a specific prompt from the MCP server |
+| `retry` | `() => void` | Manually attempt to reconnect |
+| `disconnect` | `() => void` | Disconnect from the MCP server |
+| `authenticate` | `() => void` | Manually trigger authentication |
+| `clearStorage` | `() => void` | Clear all stored authentication data |
 
-### Setting up the OAuth Callback Route
+## Connection States
 
-Remember to create the callback route (e.g., /oauth/callback) specified in callbackUrl and have it execute the onMcpAuthorization function exported from the main use-mcp package. See the root README for an example.
+- **discovering**: Checking server existence and capabilities (including auth requirements)
+- **authenticating**: Authentication is required and the process (e.g., popup) has been initiated
+- **connecting**: Establishing the SSE connection to the server
+- **loading**: Connected; loading resources like the tool list
+- **ready**: Connected and ready for tool calls, resource access, and prompt retrieval
+- **failed**: Connection or authentication failed. Check the `error` property
+
+## Features
+
+- **Automatic Connection Management**: Handles connection lifecycle with automatic reconnection and retry logic
+- **OAuth Authentication**: Supports OAuth flows with popup windows and fallback to manual authentication
+- **Dual Transport Support**: Works with both HTTP and SSE (Server-Sent Events) transports
+- **Resource Access**: Full access to MCP resources with listing and reading capabilities
+- **Prompt Management**: Access to MCP prompts for template-based interactions
+- **Tool Calling**: Execute tools on the MCP server with proper error handling
+- **TypeScript Support**: Full type definitions for all APIs and return values
+- **Debug Logging**: Comprehensive logging for troubleshooting connection issues
+- **Error Recovery**: Built-in retry mechanisms and manual recovery options
